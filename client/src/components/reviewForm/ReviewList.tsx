@@ -23,7 +23,7 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/reviews");
+        const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reviews`);
         const filtered = response.data.filter((review: Review) => review.imdbID === imdbID);
         setReviews(filtered);
       } catch (error) {

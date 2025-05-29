@@ -18,7 +18,7 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
     e.preventDefault();
 
     try {
-      await axios.post('http://localhost:5000/api/reviews', {
+      await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reviews`, {
         imdbID,
         movie: movieTitle,
         user,
