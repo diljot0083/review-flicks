@@ -4,6 +4,8 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import ReviewForm from "./ReviewForm";
 import axios from "axios";
 
+// const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+
 const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
 const Review = () => {
