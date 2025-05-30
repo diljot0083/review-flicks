@@ -8,14 +8,19 @@ import routerReview from './routes/reviews.js';
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://movie-review-website-ons4.vercel.app',
+  methods: ['GET', 'POST', 'DELETE'],
+}));
+
 app.use(express.json());
 
+// Optional root route
 app.get('/', (req, res) => {
   res.json({
     message: "GET REQ"
-  })
-})
+  });
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
@@ -27,4 +32,3 @@ mongoose.connect(process.env.MONGO_URI)
 // Use the routes
 app.use('/api/reviews', routerReview);
 app.use('/api/contact', routerContact);
-
