@@ -12,7 +12,7 @@ const Footer = () => {
         marginTop: "20px",
       }}
     >
-      <Typography variant="body2">© {new Date().getFullYear()} Movie Review Site</Typography>
+      <Typography variant="body2">© {new Date().getFullYear()} ReviewFlicks</Typography>
     </Box>
   );
 };
