@@ -9,8 +9,8 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: 'https://movie-review-website-ons4.vercel.app',
-  methods: ['GET', 'POST', 'DELETE'],
+  origin: true,
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -18,14 +18,14 @@ app.use(express.json());
 // Optional root route
 app.get('/', (req, res) => {
   res.json({
-    message: "GET REQ"
+    message: "API is Running"
   });
 });
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(5000, () => console.log('Server running on port 5000'));
+    app.listen(5000, () => console.log('Server is Running'));
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
