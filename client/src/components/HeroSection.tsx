@@ -45,8 +45,14 @@ const HeroSection = () => {
           sx={{
             position: "relative",
             zIndex: 1,
-            paddingLeft: "180px",
             width: "80%",
+            pl: { xs: "70px", sm: "90px", md: "170px" },
+            lineHeight: { xs: 1.6, sm: "normal" },
+            fontSize: {
+              xs: "1.9rem", // smaller text on mobile (~24px)
+              sm: "2.5rem",   // slightly larger on tablets
+              md: "3rem",
+            },
           }}
         >
           🎬 Discover & Review Your Favourite Movies
