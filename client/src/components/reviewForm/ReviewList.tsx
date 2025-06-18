@@ -43,13 +43,13 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
           <Box
             key={review._id}
             sx={{
-              mt: 2,
+              mt: 1,
               p: 2,
               backgroundColor: "#2a2a2a",
               borderRadius: 2,
               color: "white",
               maxWidth: 600,
-              margin: "0 auto",
+              mx: "auto",
             }}
           >
             <Typography variant="subtitle2">

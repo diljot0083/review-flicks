@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import ReviewForm from "./ReviewForm";
-import axios from "axios";
+import ReviewList from "./ReviewList";
 
 const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
@@ -11,7 +11,6 @@ const Review = () => {
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshReviews, setRefreshReviews] = useState(false);
-  const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -27,19 +26,6 @@ const Review = () => {
     };
     fetchMovieDetails();
   }, [id]);
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reviews`);
-        const filtered = response.data.filter((r: any) => r.imdbID === id);
-        setReviews(filtered);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      }
-    };
-    if (id) fetchReviews();
-  }, [id, refreshReviews]);
 
   if (!id) return <Typography>No movie ID provided.</Typography>;
   if (loading) return <CircularProgress />;
@@ -80,31 +66,8 @@ const Review = () => {
 
       <Box mt={4} width="100%">
         <Typography variant="h5" fontWeight="bold">User Reviews</Typography>
-        {reviews.length === 0 ? (
-          <Typography mt={2}>No reviews yet.</Typography>
-        ) : (
-          reviews.map((review) => (
-            <Box
-              key={review._id}
-              sx={{
-                mt: 2,
-                p: 2,
-                backgroundColor: "#2a2a2a",
-                borderRadius: 2,
-                width: "100%",
-                maxWidth: "600px",
-                color: "white",
-                textAlign: "left",
-                margin: "0 auto",
-              }}
-            >
-              <Typography variant="subtitle2">
-                {review.user} - ⭐ {review.rating}
-              </Typography>
-              <Typography variant="body2">{review.comment}</Typography>
-            </Box>
-          ))
-        )}
+        <ReviewList imdbID={id} refreshTrigger={refreshReviews} />
+
       </Box>
     </Box>
   );
