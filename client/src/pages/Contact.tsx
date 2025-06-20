@@ -69,7 +69,7 @@ const Contact = () => {
       <Box
         sx={{
           width: '100%',
-          background: 'linear-gradient(to right, #FF7E5F, #FEB47B)',
+          background: 'linear-gradient(to right, #1f1c2c,rgb(17, 13, 34))',
           color: 'white',
           height: '350px',
           display: 'flex',
