@@ -10,10 +10,7 @@ import Contact from "./pages/Contact";
 function App() {
   return (
     <>
-      <NavBar
-        setGenreFilter={() => {}}
-
-      />
+      <NavBar />
 
       <div style={{ minHeight: "80vh", paddingTop: "2px", maxWidth: "1200px", margin: "0 auto" }}>
         <Routes>

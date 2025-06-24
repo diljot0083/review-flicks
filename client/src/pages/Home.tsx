@@ -20,8 +20,39 @@ const Home = () => {
   const MOVIES_PER_PAGE = 8;
 
   useEffect(() => {
-    fetchMovies("Batman");
+    fetchDefaultMovies();
   }, []);
+
+  const fetchDefaultMovies = async () => {
+    const popularTitles = ["Avengers", "Inception", "Joker", "Frozen", "John Wick", "It", "Conjuring"];
+    setLoading(true);
+    try {
+      const allFetchedMovies: any[] = [];
+
+      for (const title of popularTitles) {
+        const res = await fetch(`https://www.omdbapi.com/?s=${title}&apikey=${API_KEY}`);
+        const data = await res.json();
+
+        if (data.Search) {
+          const detailedMovies = await Promise.all(
+            data.Search.map(async (movie: any) => {
+              const detailsRes = await fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`);
+              const details = await detailsRes.json();
+              return { ...movie, Genre: details.Genre, Plot: details.Plot };
+            })
+          );
+          allFetchedMovies.push(...detailedMovies);
+        }
+      }
+
+      setMovies(allFetchedMovies);
+      setDefaultMovies(allFetchedMovies);
+    } catch (err) {
+      console.error("Error fetching default movies", err);
+    }
+    setLoading(false);
+  };
+
 
   const fetchMovies = async (query: string) => {
     setLoading(true);
@@ -56,7 +87,7 @@ const Home = () => {
     setSearchQuery(query);
 
     if (query.trim() === "") {
-      setMovies(defaultMovies); 
+      setMovies(defaultMovies);
     } else {
       fetchMovies(query);
     }
@@ -71,9 +102,14 @@ const Home = () => {
   };
 
 
-  const filteredMovies = movies.filter(
-    (movie) => selectedGenre === "All" || (movie.Genre && movie.Genre.includes(selectedGenre))
-  );
+  const filteredMovies = movies.filter((movie) => {
+    if (selectedGenre === "All") return true;
+    if (!movie.Genre) return false;
+
+    const genresArray = movie.Genre.split(",").map((g: string) => g.trim().toLowerCase());
+    return genresArray.includes(selectedGenre.toLowerCase());
+  });
+
 
 
   const startIndex = (page - 1) * MOVIES_PER_PAGE;
