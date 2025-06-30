@@ -26,7 +26,18 @@ const About = () => {
             color: "#fff",
             textShadow: "2px 2px 6px rgba(0,0,0,0.7)",
             px: 2,
-            marginRight: 22
+            marginRight: {
+              xs: 0,
+              md: 22,
+            },
+            fontSize: {
+              xs: "2rem",
+              md: "3rem",
+            },
+            textAlign: {
+              xs: "center",
+              md: "left",
+            },
           }}
         >
           Meet the Developer Behind the Screen
