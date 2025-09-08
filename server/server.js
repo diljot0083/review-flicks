@@ -32,7 +32,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ------------------- Passport Google Strategy -------------------
-console.log("ID",process.env.GOOGLE_CLIENT_ID);
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
