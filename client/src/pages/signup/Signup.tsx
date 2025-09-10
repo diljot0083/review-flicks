@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Signup.css";
 
-const Signup = () => {
+interface SignupProps {
+  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Signup: React.FC<SignupProps> = ({ setIsLoggedIn })=> {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -25,6 +29,7 @@ const Signup = () => {
 
         if (res.ok) {
             sessionStorage.setItem("token", data.token);
+            setIsLoggedIn(true);
             navigate("/");
         } else {
             setError(data.message || "Signup failed");
