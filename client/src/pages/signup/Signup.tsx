@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import "./Signup.css";
 
 const Signup = () => {
-    const [fullName, setFullName] = useState("");
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -17,7 +17,7 @@ const Signup = () => {
         const res = await fetch("http://localhost:5000/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fullName, email, password }),
+            body: JSON.stringify({ name, email, password }),
             credentials: "include"
         });
 
@@ -41,8 +41,8 @@ const Signup = () => {
                 <form onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         placeholder="Full Name"
                         required
                     />
