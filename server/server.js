@@ -9,6 +9,7 @@ import routerContact from './routes/contact.js';
 import routerReview from './routes/reviews.js';
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js"
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
