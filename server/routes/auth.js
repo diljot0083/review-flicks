@@ -73,7 +73,7 @@ router.get("/me", (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ success: true, user: decoded });
+    res.json({ success: true, user: decoded, token });
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired token" });
   }

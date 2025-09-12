@@ -13,12 +13,32 @@ import Signup from "./pages/signup/Signup";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // check if token exists (user logged in)
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    fetch("http://localhost:5000/auth/me", {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setIsLoggedIn(true);
+          if (data.token) {
+            sessionStorage.setItem("token", data.token);
+          }
+        } else {
+          setIsLoggedIn(false);
+          sessionStorage.removeItem("token");
+        }
+      })
+      .catch(() => setIsLoggedIn(false))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Router>
