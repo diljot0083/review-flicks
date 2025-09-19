@@ -1,15 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import session from 'express-session';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-
+import jwt from "jsonwebtoken";
 import routerContact from './routes/contact.js';
 import routerReview from './routes/reviews.js';
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js"
 import cookieParser from "cookie-parser";
+import User from './model/User.js';
 
 dotenv.config();
 
@@ -28,15 +28,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
-
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-}));
-
 app.use(passport.initialize());
-app.use(passport.session());
 
 // ------------------- Passport Google Strategy -------------------
 
@@ -44,24 +36,24 @@ passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: process.env.GOOGLE_REDIRECT_URI,
-}, (accessToken, refreshToken, profile, done) => {
+}, async (accessToken, refreshToken, profile, done) => {
 
-  const user = {
-    googleId: profile.id,
-    name: profile.displayName,
-    email: profile.emails[0].value,
-    picture: profile.photos[0].value,
-  };
+  try {
+    let user = await User.findOne({ googleId: profile.id })
 
-  return done(null, user);
+    if (!user) {
+      user = await User.create({
+        googleId: profile.id,
+        name: profile.displayName,
+        email: profile.emails[0].value,
+        picture: profile.photos[0].value,
+      });
+    }
+    return done(null, user);
+  } catch (error) {
+    return done(error, null)
+  }
 }));
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
 
 // ------------------- Routes -------------------
 
@@ -78,20 +70,31 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: '/',session: false }),
   (req, res) => {
-    console.log('Logged in user:', req.user); // check console
-    res.json(req.user); // see user info in browser
+    const token = jwt.sign(
+      { id: req.user._id, email: req.user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.redirect(`http://localhost:5173`);
   }
 );
 
 // API routes
-app.use("/auth", authRoutes);  
+app.use("/auth", authRoutes);
 app.use('/api/reviews', routerReview);
 app.use('/api/contact', routerContact);
 
 // ------------------- MongoDB & Server -------------------
 
-app.listen( port, () => {
+app.listen(port, () => {
   console.log(`Server Running on port ${port}`)
 })

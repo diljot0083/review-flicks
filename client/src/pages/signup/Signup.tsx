@@ -3,10 +3,10 @@ import { useNavigate, Link } from "react-router-dom";
 import "./Signup.css";
 
 interface SignupProps {
-  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Signup: React.FC<SignupProps> = ({ setIsLoggedIn })=> {
+const Signup: React.FC<SignupProps> = ({ setIsLoggedIn }) => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -34,6 +34,10 @@ const Signup: React.FC<SignupProps> = ({ setIsLoggedIn })=> {
         } else {
             setError(data.message || "Signup failed");
         }
+    };
+
+    const handleGoogleLogin = () => {
+        window.location.href = "http://localhost:5000/auth/google";
     };
 
     return (
@@ -75,7 +79,7 @@ const Signup: React.FC<SignupProps> = ({ setIsLoggedIn })=> {
 
                 <div className="divider">or</div>
 
-                <button className="google-btn">
+                <button onClick={handleGoogleLogin} className="google-btn">
                     <img
                         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                         alt="Google logo"

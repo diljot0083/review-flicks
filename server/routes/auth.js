@@ -64,19 +64,20 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Get Current User
 router.get("/me", (req, res) => {
-  const token = req.cookies.token;
+    const token = req.cookies.token;
 
-  if (!token) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+    if (!token) {
+        return res.json({ success: false, message: "Not authenticated" });
+    }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ success: true, user: decoded, token });
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token" });
-  }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        res.json({ success: true, user: decoded, token });
+    } catch (err) {
+        return res.json({ success: false, message: "Invalid or expired token" });
+    }
 });
 
 export default router;
