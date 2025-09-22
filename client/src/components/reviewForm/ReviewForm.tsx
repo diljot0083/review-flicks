@@ -10,7 +10,6 @@ interface ReviewFormProps {
 }
 
 const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => {
-  const [user, setUser] = useState('');
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
 
@@ -21,12 +20,12 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
       await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reviews`, {
         imdbID,
         movie: movieTitle,
-        user,
         rating,
         comment,
-      });
+      },
+        { withCredentials: true }
+      );
 
-      setUser('');
       setRating(null);
       setComment('');
       onReviewSubmit();
@@ -52,14 +51,6 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
     >
       <Typography variant="h6" mb={2}>Leave a Review</Typography>
 
-      <TextField
-        placeholder="Your Name"
-        fullWidth
-        value={user}
-        onChange={(e) => setUser(e.target.value)}
-        sx={{ mb: 2, bgcolor: "white", borderRadius: 1 }}
-      />
-
       <Rating
         value={rating}
         onChange={(_, newValue) => setRating(newValue)}
@@ -79,13 +70,20 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
         rows={4}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e as any);
+          }
+        }}
+
         sx={{ mb: 2, bgcolor: "white", borderRadius: 1 }}
       />
 
       <Button
         type="submit"
         variant="contained"
-        disabled={!user || !rating || comment.trim() === ""}
+        disabled={!rating || comment.trim() === ""}
         fullWidth
         sx={{
           bgcolor: "#007BFF",

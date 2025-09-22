@@ -1,44 +1,68 @@
 import express from 'express';
 import Review from '../model/Review.js';
+import { verifyToken } from '../middleware/authMiddleware.js';
 
 const routerReview = express.Router();
 
 // POST a new review
-routerReview.post('/', async (req, res) => {
+routerReview.post('/', verifyToken, async (req, res) => {
   try {
-    console.log("Incoming Review:", req.body);
+    const { movie, rating, comment, imdbID } = req.body;
 
-    const newReview = new Review(req.body);
+    const newReview = new Review({
+      movie,
+      rating,
+      comment,
+      imdbID,
+      user: req.user.id,
+    });
+
     await newReview.save();
 
-    console.log("Saved Review:", newReview);
-    res.status(201).json(newReview);
+    const populatedReview = await Review.findById(newReview._id).populate('user', 'name email');
+    res.status(201).json(populatedReview);
   } catch (err) {
-    console.error('Error saving review:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-
 // GET all reviews
 routerReview.get('/', async (req, res) => {
   try {
-    const reviews = await Review.find();
+    const reviews = await Review.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
     res.json(reviews);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-routerReview.delete('/:id', async (req, res) => {
+// DELETE a review
+routerReview.delete('/:id', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    await Review.findByIdAndDelete(id);
-    res.status(200).json({ message: 'Review deleted successfully' });
+    const review = await Review.findById(req.params.id).populate('user', '_id');
+
+    if (!review) return res.status(404).json({ message: "Review not found" });
+
+    if (!review.user) {
+      await review.deleteOne();
+      return res.json({ message: "Anonymous review deleted successfully" });
+    }
+
+    const reviewUserId = review.user._id.toString();
+
+    if (reviewUserId !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to delete this review" });
+    }
+
+    await review.deleteOne();
+    res.json({ message: "Review deleted successfully" });
+
   } catch (err) {
-    res.status(500).json({ message: 'Error deleting review', error: err });
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
   }
 });
-
 
 export default routerReview;
