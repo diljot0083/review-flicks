@@ -16,7 +16,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/auth/me", {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/auth/me`, {
       method: "GET",
       credentials: "include",
     })

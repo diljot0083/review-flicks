@@ -17,7 +17,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
         e.preventDefault();
         setLoading(true);
 
-        const res = await fetch("http://localhost:5000/auth/login", {
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -35,7 +35,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = "http://localhost:5000/auth/google";
+        window.location.href = `${import.meta.env.VITE_SERVER_URL}/auth/google`;
     };
 
     return (

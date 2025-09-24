@@ -18,7 +18,7 @@ const Signup: React.FC<SignupProps> = ({ setIsLoggedIn }) => {
         e.preventDefault();
         setLoading(true);
 
-        const res = await fetch("http://localhost:5000/auth/signup", {
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/auth/signup`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, password }),
@@ -37,7 +37,7 @@ const Signup: React.FC<SignupProps> = ({ setIsLoggedIn }) => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = "http://localhost:5000/auth/google";
+        window.location.href = `${import.meta.env.VITE_SERVER_URL}/auth/google`;
     };
 
     return (
