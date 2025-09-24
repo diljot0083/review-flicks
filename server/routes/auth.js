@@ -64,8 +64,15 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Logout
+router.get("/logout", (req, res) => {
+    // Clear the cookie
+    res.clearCookie("token");
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+});
+
 // Get Current User
-router.get("/me", (req, res) => {
+router.get("/me", async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
@@ -74,7 +81,11 @@ router.get("/me", (req, res) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        res.json({ success: true, user: decoded, token });
+
+        const user = await User.findById(decoded.id).select("picture");
+        if (!user) return res.json({ success: false, message: "User not found" });
+
+        res.json({ success: true, user });
     } catch (err) {
         return res.json({ success: false, message: "Invalid or expired token" });
     }

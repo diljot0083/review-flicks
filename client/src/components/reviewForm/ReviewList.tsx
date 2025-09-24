@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { Box, Typography, IconButton } from "@mui/material";
+import { Box, Typography, IconButton, TextField, Button } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface User {
   _id: string;
@@ -26,6 +29,9 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
   // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,7 +40,6 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
           `${import.meta.env.VITE_SERVER_URL}/auth/me`,
           { withCredentials: true }
         );
-        // use res.data.user.id instead of res.data._id
         if (res.data.success && res.data.user) {
           setCurrentUserId(res.data.user.id);
         } else {
@@ -66,6 +71,7 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
     fetchReviews();
   }, [imdbID, refreshTrigger]);
 
+  // DELETE
   const handleDelete = async (id: string) => {
     try {
       await axios.delete(
@@ -77,6 +83,34 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
       console.error("Error deleting review:", err);
     }
   };
+
+  // EDIT
+  const startEditing = (review: Review) => {
+    setEditingId(review._id);
+    setEditText(review.comment);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const saveEdit = async (id: string) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_SERVER_URL}/api/reviews/${id}`,
+        { comment: editText },
+        { withCredentials: true }
+      );
+      setReviews((prev) =>
+        prev.map((r) => (r._id === id ? response.data : r))
+      );
+      cancelEditing();
+    } catch (err) {
+      console.error("Error editing review:", err);
+    }
+  };
+
 
   return (
     <Box>
@@ -99,17 +133,59 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
               alignItems: "center",
             }}
           >
-            <Box>
-              <Typography variant="subtitle2">
-                {review.user?.name} - ⭐ {review.rating}
-              </Typography>
-              <Typography variant="body2">{review.comment}</Typography>
+            <Box sx={{ flex: 1 }}>
+              {editingId === review._id ? (
+                <>
+                  <TextField
+                    fullWidth
+                    multiline
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    sx={{ bgcolor: "white", borderRadius: 1, mb: 1 }}
+                  />
+                  <Button
+                    onClick={() => saveEdit(review._id)}
+                    startIcon={<SaveIcon />}
+                    variant="contained"
+                    sx={{ mr: 1 }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    onClick={cancelEditing}
+                    startIcon={<CloseIcon />}
+                    variant="outlined"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Typography variant="subtitle2">
+                    {review.user?.name} - ⭐ {review.rating}
+                  </Typography>
+                  <Typography variant="body2">{review.comment}</Typography>
+                </>
+              )}
             </Box>
 
             {review.user && review.user._id === currentUserId && (
-              <IconButton onClick={() => handleDelete(review._id)} color="error">
-                <DeleteIcon />
-              </IconButton>
+              <Box>
+                {editingId === review._id ? null : (
+                  <IconButton
+                    onClick={() => startEditing(review)}
+                    color="primary"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                )}
+                <IconButton
+                  onClick={() => handleDelete(review._id)}
+                  color="error"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
             )}
           </Box>
         ))

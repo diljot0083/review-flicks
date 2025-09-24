@@ -1,11 +1,52 @@
-import { AppBar, Toolbar, Typography, Button, Box, useMediaQuery, useTheme } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Button, useMediaQuery, useTheme } from "@mui/material";
+import { useNavigate, Link } from "react-router-dom";
 import MovieIcon from "@mui/icons-material/Movie";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const NavBar = () => {
+interface NavBarProps {
+  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [user, setUser] = useState<{ picture?: string; id: string } | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/me`, {
+          withCredentials: true,
+        });
+        if (res.data.success && res.data.user) setUser(res.data.user);
+        else setUser(null);
+      } catch {
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = async () => {
+    try {
+      await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, { withCredentials: true });
+      setUser(null);
+      setIsLoggedIn(false);
+      sessionStorage.removeItem("token");
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      handleMenuClose();
+    }
+  };
 
   return (
     <AppBar position="static" sx={{ background: "#141E30", py: 0.4 }}>
@@ -16,8 +57,8 @@ const NavBar = () => {
           onClick={() => navigate("/")}
         >
           <MovieIcon sx={{ color: "purple", fontSize: "24px", mr: isSmallScreen ? 0.5 : 1 }} />
-          <Typography
-            variant="h6"
+          <Box
+            component="span"
             sx={{
               color: "white",
               fontWeight: "bold",
@@ -26,7 +67,7 @@ const NavBar = () => {
             }}
           >
             Movie Review
-          </Typography>
+          </Box>
         </Box>
 
         {/* Right Side Buttons */}
@@ -38,8 +79,7 @@ const NavBar = () => {
             gap: isSmallScreen ? "4px" : "10px",
           }}
         >
-
-          {/* About & Contact Buttons */}
+          {/* About & Contact */}
           <Button
             component={Link}
             to="/about"
@@ -68,6 +108,20 @@ const NavBar = () => {
           >
             Contact Us
           </Button>
+
+          {/* Avatar only */}
+          {user && (
+            <>
+              <Avatar
+                src={user.picture}
+                sx={{ width: 30, height: 30, cursor: "pointer" }}
+                onClick={handleProfileClick}
+              />
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </>
+          )}
         </Box>
       </Toolbar>
     </AppBar>

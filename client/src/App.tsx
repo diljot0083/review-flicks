@@ -22,30 +22,21 @@ function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setIsLoggedIn(true);
-          if (data.token) {
-            sessionStorage.setItem("token", data.token);
-          }
-        } else {
-          setIsLoggedIn(false);
-          sessionStorage.removeItem("token");
-        }
+        if (data.success) setIsLoggedIn(true);
+        else setIsLoggedIn(false);
       })
       .catch(() => setIsLoggedIn(false))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <Router>
       {isLoggedIn ? (
         <>
-          <NavBar />
-          <div style={{ minHeight: "80vh", paddingTop: "2px", maxWidth: "1200px", margin: "0 auto", }}>
+          <NavBar setIsLoggedIn={setIsLoggedIn} />
+          <div style={{ minHeight: "80vh", paddingTop: "2px", maxWidth: "1200px", margin: "0 auto" }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/movie/:id" element={<MovieDetails />} />
