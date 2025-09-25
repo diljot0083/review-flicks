@@ -39,7 +39,6 @@ const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
       await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, { withCredentials: true });
       setUser(null);
       setIsLoggedIn(false);
-      sessionStorage.removeItem("token");
       navigate("/login");
     } catch (err) {
       console.error("Logout error:", err);

@@ -70,7 +70,7 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/',session: false }),
+  passport.authenticate('google', { failureRedirect: '/', session: false }),
   (req, res) => {
     const token = jwt.sign(
       { id: req.user._id, email: req.user.email },
@@ -80,6 +80,7 @@ app.get('/auth/google/callback',
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000
     });

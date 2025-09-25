@@ -28,7 +28,6 @@ const Signup: React.FC<SignupProps> = ({ setIsLoggedIn }) => {
         const data = await res.json();
 
         if (res.ok) {
-            sessionStorage.setItem("token", data.token);
             setIsLoggedIn(true);
             navigate("/");
         } else {
