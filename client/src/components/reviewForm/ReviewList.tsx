@@ -41,7 +41,7 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
           { withCredentials: true }
         );
         if (res.data.success && res.data.user) {
-          setCurrentUserId(res.data.user.id);
+          setCurrentUserId(res.data.user._id);
         } else {
           setCurrentUserId(null);
         }

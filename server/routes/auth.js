@@ -86,7 +86,7 @@ router.get("/me", async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const user = await User.findById(decoded.id).select("picture");
+        const user = await User.findById(decoded.id).select("_id name email picture");
         if (!user) return res.json({ success: false, message: "User not found" });
 
         res.json({ success: true, user });
