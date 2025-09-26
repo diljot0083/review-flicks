@@ -32,6 +32,8 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
@@ -73,6 +75,9 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
 
   // DELETE
   const handleDelete = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+
     try {
       await axios.delete(
         `${import.meta.env.VITE_SERVER_URL}/api/reviews/${id}`,
@@ -182,6 +187,7 @@ const ReviewList = ({ imdbID, refreshTrigger }: ReviewListProps) => {
                 <IconButton
                   onClick={() => handleDelete(review._id)}
                   color="error"
+                  disabled={deletingId === review._id}
                 >
                   <DeleteIcon />
                 </IconButton>

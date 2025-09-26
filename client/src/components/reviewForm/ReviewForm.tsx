@@ -12,9 +12,13 @@ interface ReviewFormProps {
 const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => {
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
+    setLoading(true);
 
     try {
       await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reviews`, {
@@ -31,6 +35,8 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
       onReviewSubmit();
     } catch (error) {
       console.error('Error submitting review:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,7 +89,7 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
       <Button
         type="submit"
         variant="contained"
-        disabled={!rating || comment.trim() === ""}
+        disabled={!rating || comment.trim() === "" || loading}
         fullWidth
         sx={{
           bgcolor: "#007BFF",
@@ -98,7 +104,7 @@ const ReviewForm = ({ imdbID, movieTitle, onReviewSubmit }: ReviewFormProps) => 
           }
         }}
       >
-        Submit
+        {loading ? "Submitting..." : "Submit"}
       </Button>
     </Box>
   );
