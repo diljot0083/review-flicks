@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../model/User.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 // Signup
@@ -76,22 +77,17 @@ router.get("/logout", (req, res) => {
 });
 
 // Get Current User
-router.get("/me", async (req, res) => {
-    const token = req.cookies.token;
-
-    if (!token) {
-        return res.json({ success: false, message: "Not authenticated" });
-    }
-
+router.get("/me", verifyToken, async (req, res) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(req.user.id).select("_id name email picture");
 
-        const user = await User.findById(decoded.id).select("_id name email picture");
-        if (!user) return res.json({ success: false, message: "User not found" });
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
 
-        res.json({ success: true, user });
+        return res.json({ success: true, user });
     } catch (err) {
-        return res.json({ success: false, message: "Invalid or expired token" });
+        return res.json({ success: false, message: "Server error" });
     }
 });
 
