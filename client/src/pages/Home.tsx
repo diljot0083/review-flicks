@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, FormControl, Select, MenuItem, Pagination, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { FaSearch } from "react-icons/fa";
 import HeroSection from "../components/HeroSection";
 import MovieCard from "../components/MovieCard";
+import { Dropdown, Pagination } from "../components/ui";
 
 const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
@@ -38,7 +39,7 @@ const Home = () => {
             data.Search.map(async (movie: any) => {
               const detailsRes = await fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`);
               const details = await detailsRes.json();
-              return { ...movie, Genre: details.Genre, Plot: details.Plot };
+              return { ...movie, Genre: details.Genre, Plot: details.Plot, imdbRating: details.imdbRating };
             })
           );
           allFetchedMovies.push(...detailedMovies);
@@ -53,19 +54,17 @@ const Home = () => {
     setLoading(false);
   };
 
-
   const fetchMovies = async (query: string) => {
     setLoading(true);
     try {
       const response = await fetch(`https://www.omdbapi.com/?s=${query}&apikey=${API_KEY}`);
       const data = await response.json();
       if (data.Search) {
-
         const detailedMovies = await Promise.all(
           data.Search.map(async (movie: any) => {
             const detailsRes = await fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`);
             const details = await detailsRes.json();
-            return { ...movie, Genre: details.Genre, Plot: details.Plot };
+            return { ...movie, Genre: details.Genre, Plot: details.Plot, imdbRating: details.imdbRating };
           })
         );
 
@@ -85,6 +84,7 @@ const Home = () => {
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
     setSearchQuery(query);
+    setPage(1);
 
     if (query.trim() === "") {
       setMovies(defaultMovies);
@@ -93,14 +93,14 @@ const Home = () => {
     }
   };
 
-  const handleGenreChange = (event: any) => {
-    setSelectedGenre(event.target.value);
+  const handleGenreChange = (genre: string) => {
+    setSelectedGenre(genre);
+    setPage(1);
   };
 
   const handleMovieClick = (imdbID: string) => {
     navigate(`/review/${imdbID}`);
   };
-
 
   const filteredMovies = movies.filter((movie) => {
     if (selectedGenre === "All") return true;
@@ -110,68 +110,68 @@ const Home = () => {
     return genresArray.includes(selectedGenre.toLowerCase());
   });
 
-
-
   const startIndex = (page - 1) * MOVIES_PER_PAGE;
   const displayedMovies = filteredMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);
 
   return (
-    <div>
+    <div className="bg-ink">
       <HeroSection />
 
-      {/* Search & Filters Row */}
-      <Box display="flex" justifyContent="center" gap={2} my={3} flexWrap="wrap">
-        {/* Search Bar */}
-        <TextField
-          variant="outlined"
-          placeholder="Search Movies..."
-          value={searchQuery}
-          onChange={handleSearch}
-          sx={{ width: "40%", backgroundColor: "white", borderRadius: 1 }}
-        />
-
-        {/* Genre Filter */}
-        <FormControl sx={{ minWidth: 150, backgroundColor: "white", borderRadius: 1 }}>
-          <Select value={selectedGenre} onChange={handleGenreChange}>
-            {GENRES.map((genre) => (
-              <MenuItem key={genre} value={genre}>
-                {genre}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      {/* Movie Cards Grid */}
-      <Box display="flex" justifyContent="center" flexWrap="wrap" gap={2} minHeight="300px">
-        {loading ? (
-          <CircularProgress color="secondary" />
-        ) : displayedMovies.length > 0 ? (
-          displayedMovies.map((movie) => (
-            <MovieCard
-              key={movie.imdbID}
-              imdbID={movie.imdbID}
-              title={movie.Title}
-              imageUrl={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/250"}
-              plot={movie.Plot}
-              onClick={() => handleMovieClick(movie.imdbID)}
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        {/* Search & Filters Row */}
+        <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+          <div className="relative w-full max-w-md">
+            <FaSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ivory/30" />
+            <input
+              placeholder="Search movies..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 pl-11 pr-4 text-sm text-ivory placeholder:text-ivory/30 outline-none transition-colors focus:border-gold/50 focus:bg-white/[0.07]"
             />
-          ))
-        ) : (
-          <p style={{ color: "white", fontSize: "18px" }}>No movies found.</p>
-        )}
-      </Box>
+          </div>
+          <Dropdown value={selectedGenre} options={GENRES} onChange={handleGenreChange} />
+        </div>
 
-      {filteredMovies.length > MOVIES_PER_PAGE && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination
-            count={Math.ceil(filteredMovies.length / MOVIES_PER_PAGE)}
-            page={page}
-            onChange={(_event, value) => setPage(value)}
-            color="primary"
-          />
-        </Box>
-      )}
+        {/* Movie Grid */}
+        <div className="flex min-h-[300px] flex-wrap justify-center gap-6">
+          {loading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skeleton h-[404px] w-[250px] shrink-0 rounded-2xl" />
+            ))
+          ) : displayedMovies.length > 0 ? (
+            displayedMovies.map((movie, i) => (
+              <div
+                key={movie.imdbID}
+                className="animate-[fade-up_0.6s_ease_forwards] opacity-0"
+                style={{ animationDelay: `${(i % MOVIES_PER_PAGE) * 60}ms` }}
+              >
+                <MovieCard
+                  imdbID={movie.imdbID}
+                  title={movie.Title}
+                  imageUrl={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/250x340/171420/f2ede4?text=No+Poster"}
+                  plot={movie.Plot}
+                  rating={movie.imdbRating}
+                  onClick={() => handleMovieClick(movie.imdbID)}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="mt-10 text-center text-ivory/40">
+              No movies found. Try a different title or clear your search.
+            </p>
+          )}
+        </div>
+
+        {filteredMovies.length > MOVIES_PER_PAGE && (
+          <div className="mt-10">
+            <Pagination
+              page={page}
+              count={Math.ceil(filteredMovies.length / MOVIES_PER_PAGE)}
+              onChange={setPage}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
