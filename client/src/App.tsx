@@ -9,7 +9,7 @@ import Contact from "./pages/Contact";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
-import Signup from "./pages/signup/Signup";
+import Signup from "./pages/Signup";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
