@@ -1,7 +1,6 @@
-import { AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Button, useMediaQuery, useTheme } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import MovieIcon from "@mui/icons-material/Movie";
-import { useEffect, useState } from "react";
+import { FaFilm, FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
 
 interface NavBarProps {
@@ -10,11 +9,10 @@ interface NavBarProps {
 
 const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
   const [user, setUser] = useState<{ picture?: string; id: string } | null>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -31,8 +29,13 @@ const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
     fetchUser();
   }, []);
 
-  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -43,87 +46,88 @@ const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      handleMenuClose();
+      setMenuOpen(false);
     }
   };
 
+  const NavLinks = ({ onClick }: { onClick?: () => void }) => (
+    <>
+      <Link
+        to="/about"
+        onClick={onClick}
+        className="relative text-sm text-ivory/70 transition-colors hover:text-ivory after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-gold after:transition-all after:duration-300 hover:after:w-full"
+      >
+        About Us
+      </Link>
+      <Link
+        to="/contact"
+        onClick={onClick}
+        className="relative text-sm text-ivory/70 transition-colors hover:text-ivory after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-gold after:transition-all after:duration-300 hover:after:w-full"
+      >
+        Contact Us
+      </Link>
+    </>
+  );
+
   return (
-    <AppBar position="static" sx={{ background: "#141E30", py: 0.4 }}>
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        {/* Logo */}
-        <Box
-          sx={{ display: "flex", alignItems: "center", cursor: "pointer", flexShrink: 0 }}
+    <header className="glass sticky top-0 z-50 border-x-0 border-t-0">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <div
+          className="flex shrink-0 cursor-pointer items-center gap-2"
           onClick={() => navigate("/")}
         >
-          <MovieIcon sx={{ color: "purple", fontSize: "24px", mr: isSmallScreen ? 0.5 : 1 }} />
-          <Box
-            component="span"
-            sx={{
-              color: "white",
-              fontWeight: "bold",
-              fontSize: isSmallScreen ? "1rem" : "1.25rem",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Movie Review
-          </Box>
-        </Box>
+          <FaFilm className="text-lg text-gold" />
+          <span className="font-display text-lg font-semibold text-ivory">Movie Review</span>
+        </div>
 
-        {/* Right Side Buttons */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "nowrap",
-            gap: isSmallScreen ? "4px" : "10px",
-          }}
-        >
-          {/* About & Contact */}
-          <Button
-            component={Link}
-            to="/about"
-            sx={{
-              color: "white",
-              textTransform: "none",
-              fontSize: isSmallScreen ? "0.7rem" : "0.9rem",
-              padding: isSmallScreen ? "3px 6px" : "6px 10px",
-              minWidth: "fit-content",
-              whiteSpace: "nowrap",
-            }}
-          >
-            About Us
-          </Button>
-          <Button
-            component={Link}
-            to="/contact"
-            sx={{
-              color: "white",
-              textTransform: "none",
-              fontSize: isSmallScreen ? "0.7rem" : "0.9rem",
-              padding: isSmallScreen ? "3px 6px" : "6px 10px",
-              minWidth: "fit-content",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Contact Us
-          </Button>
-
-          {/* Avatar only */}
+        <nav className="hidden items-center gap-6 sm:flex">
+          <NavLinks />
           {user && (
-            <>
-              <Avatar
-                src={user.picture}
-                sx={{ width: 30, height: 30, cursor: "pointer" }}
-                onClick={handleProfileClick}
-              />
-              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-              </Menu>
-            </>
+            <div ref={menuRef} className="relative">
+              <button onClick={() => setMenuOpen((o) => !o)} className="block">
+                <img
+                  src={user.picture}
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full border border-white/15 object-cover"
+                />
+              </button>
+              {menuOpen && (
+                <div className="glass absolute right-0 mt-2 w-36 overflow-hidden rounded-xl py-1 shadow-2xl shadow-black/40">
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-ivory/80 transition-colors hover:bg-white/5 hover:text-rose"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+        </nav>
+
+        <button
+          className="text-ivory sm:hidden"
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <FaTimes /> : <FaBars />}
+        </button>
+      </div>
+
+      {mobileOpen && (
+        <div className="flex flex-col gap-4 border-t border-white/5 px-4 py-4 sm:hidden">
+          <NavLinks onClick={() => setMobileOpen(false)} />
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="text-left text-sm text-rose"
+            >
+              Logout
+            </button>
+          )}
+        </div>
+      )}
+    </header>
   );
 };
 
