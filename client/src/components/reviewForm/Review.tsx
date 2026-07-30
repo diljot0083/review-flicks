@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
+import { Spinner } from "../ui";
 
 const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
 const Review = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshReviews, setRefreshReviews] = useState(false);
@@ -27,49 +29,60 @@ const Review = () => {
     fetchMovieDetails();
   }, [id]);
 
-  if (!id) return <Typography>No movie ID provided.</Typography>;
-  if (loading) return <CircularProgress />;
-  if (!movie || movie.Response === "False") return <Typography>Movie not found.</Typography>;
+  if (!id) return <p className="p-8 text-center text-ivory/60">No movie ID provided.</p>;
+
+  if (loading) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center bg-ink">
+        <Spinner className="h-10 w-10" />
+      </div>
+    );
+  }
+
+  if (!movie || movie.Response === "False") {
+    return <p className="p-8 text-center text-ivory/60">Movie not found.</p>;
+  }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        padding: "2rem",
-        minHeight: "100vh",
-        maxWidth: "1200px",
-        margin: "0 auto",
-        backgroundColor: "#121212",
-        color: "white",
-      }}
-    >
-      <img
-        src={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/300"}
-        alt={movie.Title}
-        style={{ width: "250px", borderRadius: "10px" }}
-      />
+    <div className="min-h-screen bg-ink px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-8 flex items-center gap-2 text-sm text-ivory/50 transition-colors hover:text-gold"
+        >
+          <FaArrowLeft className="text-xs" /> Back
+        </button>
 
-      <Typography variant="h4" mt={2}>{movie.Title}</Typography>
-      <Typography variant="subtitle1" color="gray">{movie.Genre} | {movie.Year}</Typography>
-      <Typography mt={2} sx={{ maxWidth: 800, margin: "0 auto" }}>{movie.Plot}</Typography>
+        <div className="flex flex-col items-center text-center">
+          <img
+            src={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/220x325/171420/f2ede4?text=No+Poster"}
+            alt={movie.Title}
+            className="w-[180px] rounded-2xl border border-white/5 shadow-2xl shadow-black/50"
+          />
+          <h1 className="font-display mt-5 text-3xl font-bold text-ivory">{movie.Title}</h1>
+          <p className="mt-1 text-sm text-ivory/45">
+            {movie.Genre} • {movie.Year}
+          </p>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-ivory/60">{movie.Plot}</p>
+        </div>
 
-      <Box mt={4} width="100%">
-        <ReviewForm
-          imdbID={id}
-          movieTitle={movie.Title}
-          onReviewSubmit={() => setRefreshReviews(prev => !prev)}
-        />
-      </Box>
+        <div className="perforation my-10" />
 
-      <Box mt={4} width="100%">
-        <Typography variant="h5" fontWeight="bold">User Reviews</Typography>
-        <ReviewList imdbID={id} refreshTrigger={refreshReviews} />
+        <section>
+          <h2 className="font-display mb-4 text-xl font-semibold text-ivory">Share Your Thoughts</h2>
+          <ReviewForm
+            imdbID={id}
+            movieTitle={movie.Title}
+            onReviewSubmit={() => setRefreshReviews((prev) => !prev)}
+          />
+        </section>
 
-      </Box>
-    </Box>
+        <section className="mt-12">
+          <h2 className="font-display mb-4 text-xl font-semibold text-ivory">What Others Are Saying</h2>
+          <ReviewList imdbID={id} refreshTrigger={refreshReviews} />
+        </section>
+      </div>
+    </div>
   );
 };
 
