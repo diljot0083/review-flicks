@@ -8,7 +8,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
-import Login from "./pages/login/Login";
+import Login from "./pages/Login";
 import Signup from "./pages/signup/Signup";
 
 function App() {
