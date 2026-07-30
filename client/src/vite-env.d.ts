@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
-  // add more variables as needed
+  readonly VITE_SERVER_URL: string;
+  readonly VITE_OMDB_API_KEY: string;
 }
 
 interface ImportMeta {
