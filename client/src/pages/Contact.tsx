@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Box, Typography, Container, TextField, Button } from '@mui/material';
+import { useState } from "react";
+import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { Button, Input, TextArea } from "../components/ui";
 
 interface FormData {
   name: string;
@@ -8,170 +9,101 @@ interface FormData {
   suggestion: string;
 }
 
-const Contact = () => {
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    phone: '',
-    suggestion: '',
-  });
+const EMPTY_FORM: FormData = { name: "", email: "", phone: "", suggestion: "" };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const Contact = () => {
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setStatus("idle");
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/contact`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-  
-      const data = await response.json();
+
       if (response.ok) {
-        console.log('Contact form submitted successfully:', data);
-        alert("Thank you! Your suggestion has been submitted.");
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          suggestion: '',
-        });
+        setStatus("success");
+        setFormData(EMPTY_FORM);
       } else {
-        console.error('Failed to submit form:', data);
-        alert("Something went wrong. Please try again.");
+        setStatus("error");
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert("Error submitting form. Please try again later.");
+      console.error("Error submitting form:", error);
+      setStatus("error");
+    } finally {
+      setSubmitting(false);
     }
   };
-  
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        minHeight: '100vh',
-        flexDirection: 'column',
-        backgroundColor: '#f4f4f4',
-      }}
-    >
-
-      <Box
-        sx={{
-          width: '100%',
-          background: 'linear-gradient(to right, #1f1c2c,rgb(17, 13, 34))',
-          color: 'white',
-          height: '350px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          textAlign: 'center',
-          px: 2,
-        }}
-      >
-        <Typography
-          variant="h3"
-          fontWeight="bold"
-          sx={{
-            color: '#fff',
-            textShadow: '2px 2px 6px rgba(0,0,0,0.7)',
-            px: 2,
+    <div className="grain relative min-h-screen overflow-hidden bg-ink px-4 py-16 sm:px-6">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="animate-sway absolute -top-32 left-1/2 h-[420px] w-[420px] -translate-x-1/2"
+          style={{
+            background: "conic-gradient(from 180deg at 50% 0%, transparent, rgba(179,73,95,0.22), transparent 50%)",
+            filter: "blur(60px)",
           }}
-        >
-          We'd Love to Hear From You!
-        </Typography>
-      </Box>
+        />
+      </div>
 
-      {/* Main Content Section */}
-      <Box sx={{ flexGrow: 1, backgroundColor: '#f4f4f4', color: '#333' }}>
-        <Container maxWidth="md" sx={{ py: 6 }}>
-          <Typography variant="h4" gutterBottom>
-            Your Suggestions Matter!
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 4 }}>
-            Please provide us with your feedback or suggestions. We value your thoughts and ideas to help us improve.
-          </Typography>
+      <div className="relative z-10 mx-auto max-w-xl text-center">
+        <h1 className="font-display text-4xl font-bold text-ivory sm:text-5xl">
+          We'd Love to <span className="text-gradient-gold">Hear From You</span>
+        </h1>
+        <p className="mt-4 text-sm text-ivory/50 sm:text-base">
+          Feedback, bug reports, or a title we should add — tell us what's on your mind.
+        </p>
+      </div>
 
-          {/* Suggestion Form */}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              backgroundColor: '#fff',
-              padding: '40px',
-              borderRadius: '8px',
-              boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-            }}
-          >
-            <TextField
-              label="Full Name"
-              variant="outlined"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              fullWidth
-              sx={{ backgroundColor: '#f9f9f9', borderRadius: '4px', mb: 3 }}
-            />
-            <TextField
-              label="Email Address"
-              variant="outlined"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              fullWidth
-              sx={{ backgroundColor: '#f9f9f9', borderRadius: '4px', mb: 3 }}
-            />
-            <TextField
-              label="Phone Number"
-              variant="outlined"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleInputChange}
-              fullWidth
-              sx={{ backgroundColor: '#f9f9f9', borderRadius: '4px', mb: 3 }}
-            />
-            <TextField
-              label="Your Suggestion"
-              variant="outlined"
-              name="suggestion"
-              multiline
-              rows={4}
-              value={formData.suggestion}
-              onChange={handleInputChange}
-              fullWidth
-              sx={{ backgroundColor: '#f9f9f9', borderRadius: '4px', mb: 3 }}
-            />
-            <Button
-              variant="contained"
-              type="submit"
-              sx={{
-                backgroundColor: '#4E54C8',
-                color: '#fff',
-                '&:hover': { backgroundColor: '#8F94FB' },
-                width: '100%',
-                padding: '14px',
-                borderRadius: '8px',
-              }}
-            >
-              Submit Suggestion
-            </Button>
-          </Box>
-        </Container>
-      </Box>
-    </Box>
+      <div className="glass relative z-10 mx-auto mt-10 max-w-xl rounded-3xl p-8 sm:p-10">
+        {status === "success" && (
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+            <FaCheckCircle /> Thanks — your suggestion has been sent.
+          </div>
+        )}
+        {status === "error" && (
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose">
+            <FaExclamationCircle /> We couldn't send that. Check your connection and try again.
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="Full Name" name="name" value={formData.name} onChange={handleInputChange} required />
+          <Input
+            label="Email Address"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+          />
+          <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} />
+          <TextArea
+            label="Your Suggestion"
+            name="suggestion"
+            rows={4}
+            value={formData.suggestion}
+            onChange={handleInputChange}
+            required
+          />
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Sending..." : "Send Suggestion"}
+          </Button>
+        </form>
+      </div>
+    </div>
   );
 };
 
