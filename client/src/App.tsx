@@ -10,6 +10,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import { Spinner } from "./components/ui";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -29,14 +30,20 @@ function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-ink">
+        <Spinner className="h-10 w-10" />
+      </div>
+    );
+  }
 
   return (
     <Router>
       {isLoggedIn ? (
         <>
           <NavBar setIsLoggedIn={setIsLoggedIn} />
-          <div style={{ minHeight: "80vh", paddingTop: "2px", maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ minHeight: "80vh" }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/movie/:id" element={<MovieDetails />} />

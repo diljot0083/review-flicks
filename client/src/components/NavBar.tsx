@@ -9,7 +9,7 @@ interface NavBarProps {
 
 const NavBar = ({ setIsLoggedIn }: NavBarProps) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ picture?: string; id: string } | null>(null);
+  const [user, setUser] = useState<{ picture?: string; _id: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

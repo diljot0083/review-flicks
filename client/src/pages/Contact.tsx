@@ -89,7 +89,7 @@ const Contact = () => {
             onChange={handleInputChange}
             required
           />
-          <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} />
+          <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} required />
           <TextArea
             label="Your Suggestion"
             name="suggestion"
