@@ -5,6 +5,16 @@ import User from "../model/User.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+const isProduction = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+};
+
 // Signup
 router.post('/signup', async (req, res) => {
     const { name, email, password } = req.body;
@@ -20,15 +30,10 @@ router.post('/signup', async (req, res) => {
         const token = jwt.sign(
             { id: newUser._id, email: newUser.email },
             process.env.JWT_SECRET,
-            { expiresIn: "24h" }
+            { expiresIn: "7d" }
         )
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: 24 * 60 * 60 * 1000
-        });
+        res.cookie("token", token, cookieOptions);
 
         res.status(201).json({ message: "User registered successfully", token, newUser });
     } catch (error) {
@@ -49,15 +54,10 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { id: user._id, email: user.email },
             process.env.JWT_SECRET,
-            { expiresIn: "24h" }
+            { expiresIn: "7d" }
         );
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: 24 * 60 * 60 * 1000
-        });
+        res.cookie("token", token, cookieOptions);
 
         res.status(200).json({ message: "Login Successfully", token, user });
     } catch (error) {
@@ -70,8 +70,8 @@ router.get("/logout", (req, res) => {
     // Clear the cookie
     res.clearCookie("token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
     });
     res.status(200).json({ success: true, message: "Logged out successfully" });
 });

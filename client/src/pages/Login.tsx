@@ -44,7 +44,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = `${import.meta.env.VITE_SERVER_URL}/auth/google`;
+        window.location.assign(`${import.meta.env.VITE_SERVER_URL}/auth/google`);
     };
 
     return (

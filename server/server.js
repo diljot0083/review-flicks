@@ -21,10 +21,25 @@ connectDB();
 
 // ------------------- Middleware -------------------
 
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
+const allowedOrigins = [
+  process.env.LOCAL_CLIENT_URL,
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -77,14 +92,21 @@ app.get('/auth/google/callback',
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.redirect(process.env.VITE_CLIENT_URL);
+    res.redirect(
+      process.env.NODE_ENV === "production"
+        ? process.env.CLIENT_URL
+        : process.env.LOCAL_CLIENT_URL
+    );
   }
 );
 
