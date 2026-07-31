@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { FaStar } from "react-icons/fa";
 
 interface MovieCardProps {
-  imdbID: string;
+  id: string;
   title: string;
   imageUrl: string;
   plot?: string;

@@ -5,12 +5,23 @@ import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
 import { Spinner } from "../ui";
 
-const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
+
+interface TmdbMovieDetail {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  release_date: string;
+  genres: { id: number; name: string }[];
+  external_ids?: { imdb_id: string | null };
+}
 
 const Review = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [movie, setMovie] = useState<any>(null);
+  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshReviews, setRefreshReviews] = useState(false);
 
@@ -18,9 +29,11 @@ const Review = () => {
     if (!id) return;
     const fetchMovieDetails = async () => {
       try {
-        const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}`);
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=external_ids`
+        );
         const data = await res.json();
-        setMovie(data);
+        setMovie(data && data.id ? data : null);
       } catch (err) {
         console.error("Error fetching movie:", err);
       }
@@ -39,9 +52,13 @@ const Review = () => {
     );
   }
 
-  if (!movie || movie.Response === "False") {
+  if (!movie) {
     return <p className="p-8 text-center text-ivory/60">Movie not found.</p>;
   }
+
+  const imdbId = movie.external_ids?.imdb_id || null;
+  const genreText = movie.genres?.map((g) => g.name).join(", ");
+  const year = movie.release_date ? movie.release_date.slice(0, 4) : "";
 
   return (
     <div className="min-h-screen bg-ink px-4 py-10 sm:px-6">
@@ -55,32 +72,34 @@ const Review = () => {
 
         <div className="flex flex-col items-center text-center">
           <img
-            src={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/220x325/171420/f2ede4?text=No+Poster"}
-            alt={movie.Title}
+            src={movie.poster_path ? `${TMDB_IMG}${movie.poster_path}` : "https://via.placeholder.com/220x325/171420/f2ede4?text=No+Poster"}
+            alt={movie.title}
             className="w-[180px] rounded-2xl border border-white/5 shadow-2xl shadow-black/50"
           />
-          <h1 className="font-display mt-5 text-3xl font-bold text-ivory">{movie.Title}</h1>
-          <p className="mt-1 text-sm text-ivory/45">
-            {movie.Genre} • {movie.Year}
-          </p>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-ivory/60">{movie.Plot}</p>
+          <h1 className="font-display mt-5 text-3xl font-bold text-ivory">{movie.title}</h1>
+          <p className="mt-1 text-sm text-ivory/45">{genreText} • {year}</p>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-ivory/60">{movie.overview}</p>
         </div>
 
         <div className="perforation my-10" />
 
-        <section>
-          <h2 className="font-display mb-4 text-xl font-semibold text-ivory">Share Your Thoughts</h2>
-          <ReviewForm
-            imdbID={id}
-            movieTitle={movie.Title}
-            onReviewSubmit={() => setRefreshReviews((prev) => !prev)}
-          />
-        </section>
+        {imdbId ? (
+          <>
+            <section>
+              <h2 className="font-display mb-4 text-xl font-semibold text-ivory">Share Your Thoughts</h2>
+              <ReviewForm imdbID={imdbId} movieTitle={movie.title} onReviewSubmit={() => setRefreshReviews((prev) => !prev)} />
+            </section>
 
-        <section className="mt-12">
-          <h2 className="font-display mb-4 text-xl font-semibold text-ivory">What Others Are Saying</h2>
-          <ReviewList imdbID={id} refreshTrigger={refreshReviews} />
-        </section>
+            <section className="mt-12">
+              <h2 className="font-display mb-4 text-xl font-semibold text-ivory">What Others Are Saying</h2>
+              <ReviewList imdbID={imdbId} refreshTrigger={refreshReviews} />
+            </section>
+          </>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-white/10 py-10 text-center text-sm text-ivory/35">
+            Reviews aren't available for this title yet — TMDB hasn't linked it to an IMDb entry.
+          </p>
+        )}
       </div>
     </div>
   );

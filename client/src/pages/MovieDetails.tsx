@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaStar } from "react-icons/fa";
 import { Button, Spinner } from "../components/ui";
 
-const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -14,9 +15,9 @@ const MovieDetails = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}&plot=full`);
+        const response = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
         const data = await response.json();
-        setMovie(data);
+        setMovie(data && data.id ? data : null);
       } catch (error) {
         console.error("Error fetching movie details:", error);
       }
@@ -34,7 +35,7 @@ const MovieDetails = () => {
     );
   }
 
-  if (!movie || movie.Response === "False") {
+  if (!movie) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center gap-3 bg-ink text-center">
         <p className="font-display text-2xl text-ivory">Movie not found.</p>
@@ -45,7 +46,8 @@ const MovieDetails = () => {
     );
   }
 
-  const genres: string[] = movie.Genre ? movie.Genre.split(",").map((g: string) => g.trim()) : [];
+  const genres: string[] = movie.genres ? movie.genres.map((g: { name: string }) => g.name) : [];
+  const year = movie.release_date ? movie.release_date.slice(0, 4) : "";
 
   return (
     <div className="min-h-screen bg-ink px-4 py-10 sm:px-6">
@@ -60,8 +62,8 @@ const MovieDetails = () => {
         <div className="flex flex-col gap-10 md:flex-row">
           <div className="mx-auto shrink-0 md:mx-0">
             <img
-              src={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/300x445/171420/f2ede4?text=No+Poster"}
-              alt={movie.Title}
+              src={movie.poster_path ? `${TMDB_IMG}${movie.poster_path}` : "https://via.placeholder.com/300x445/171420/f2ede4?text=No+Poster"}
+              alt={movie.title}
               className="w-full max-w-[300px] rounded-2xl border border-white/5 shadow-2xl shadow-black/50"
             />
           </div>
@@ -70,33 +72,34 @@ const MovieDetails = () => {
             {genres.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {genres.map((g) => (
-                  <span
-                    key={g}
-                    className="rounded-full border border-gold/20 bg-gold/5 px-3 py-1 text-xs font-medium text-gold"
-                  >
+                  <span key={g} className="rounded-full border border-gold/20 bg-gold/5 px-3 py-1 text-xs font-medium text-gold">
                     {g}
                   </span>
                 ))}
               </div>
             )}
 
-            <h1 className="font-display text-3xl font-bold text-ivory sm:text-4xl">{movie.Title}</h1>
+            <h1 className="font-display text-3xl font-bold text-ivory sm:text-4xl">{movie.title}</h1>
 
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ivory/45">
-              <span>{movie.Year}</span>
-              <span className="text-ivory/20">•</span>
-              <span>{movie.Runtime}</span>
+              <span>{year}</span>
+              {movie.runtime ? (
+                <>
+                  <span className="text-ivory/20">•</span>
+                  <span>{movie.runtime} min</span>
+                </>
+              ) : null}
             </div>
 
-            {movie.imdbRating !== "N/A" && (
+            {movie.vote_average > 0 && (
               <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/5 px-4 py-2">
                 <FaStar className="text-gold" />
-                <span className="text-lg font-semibold text-ivory">{movie.imdbRating}</span>
-                <span className="text-xs text-ivory/40">/ 10 on IMDb</span>
+                <span className="text-lg font-semibold text-ivory">{movie.vote_average.toFixed(1)}</span>
+                <span className="text-xs text-ivory/40">/ 10 on TMDB</span>
               </div>
             )}
 
-            <p className="mt-6 max-w-2xl leading-relaxed text-ivory/65">{movie.Plot}</p>
+            <p className="mt-6 max-w-2xl leading-relaxed text-ivory/65">{movie.overview}</p>
 
             <div className="mt-8">
               <Button onClick={() => navigate(`/review/${id}`)}>Write a Review</Button>

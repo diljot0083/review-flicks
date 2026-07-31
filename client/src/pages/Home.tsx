@@ -5,9 +5,39 @@ import HeroSection from "../components/HeroSection";
 import MovieCard from "../components/MovieCard";
 import { Dropdown, Pagination } from "../components/ui";
 
-const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
 
 const GENRES = ["All", "Action", "Drama", "Comedy", "Thriller", "Horror", "Sci-Fi", "Romance"];
+const TMDB_GENRE_NAMES: Record<number, string> = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+  99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
+  27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+  878: "Sci-Fi", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
+};
+
+interface TmdbListMovie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  vote_average: number;
+  genre_ids: number[];
+}
+
+function mapTmdbMovie(m: TmdbListMovie) {
+  return {
+    imdbID: String(m.id),
+    Title: m.title,
+    Plot: m.overview,
+    Poster: m.poster_path ? `${TMDB_IMG}${m.poster_path}` : "N/A",
+    imdbRating: m.vote_average ? m.vote_average.toFixed(1) : "N/A",
+    Genre: (m.genre_ids || []).map((id) => TMDB_GENRE_NAMES[id]).filter(Boolean).join(", "),
+  };
+}
+
+const DEFAULT_MOVIES_CACHE_KEY = "reviewflicks_now_playing";
 
 const Home = () => {
   const [movies, setMovies] = useState<any[]>([]);
@@ -25,31 +55,25 @@ const Home = () => {
   }, []);
 
   const fetchDefaultMovies = async () => {
-    const popularTitles = ["Avengers", "Inception", "Joker", "Frozen", "John Wick", "It", "Conjuring"];
+    const cached = sessionStorage.getItem(DEFAULT_MOVIES_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      setMovies(parsed);
+      setDefaultMovies(parsed);
+      return;
+    }
+
     setLoading(true);
     try {
-      const allFetchedMovies: any[] = [];
+      const res = await fetch(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
+      const data = await res.json();
+      const mapped = (data.results || []).map(mapTmdbMovie);
 
-      for (const title of popularTitles) {
-        const res = await fetch(`https://www.omdbapi.com/?s=${title}&apikey=${API_KEY}`);
-        const data = await res.json();
-
-        if (data.Search) {
-          const detailedMovies = await Promise.all(
-            data.Search.map(async (movie: any) => {
-              const detailsRes = await fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`);
-              const details = await detailsRes.json();
-              return { ...movie, Genre: details.Genre, Plot: details.Plot, imdbRating: details.imdbRating };
-            })
-          );
-          allFetchedMovies.push(...detailedMovies);
-        }
-      }
-
-      setMovies(allFetchedMovies);
-      setDefaultMovies(allFetchedMovies);
+      setMovies(mapped);
+      setDefaultMovies(mapped);
+      sessionStorage.setItem(DEFAULT_MOVIES_CACHE_KEY, JSON.stringify(mapped));
     } catch (err) {
-      console.error("Error fetching default movies", err);
+      console.error("Error fetching now playing movies", err);
     }
     setLoading(false);
   };
@@ -57,24 +81,11 @@ const Home = () => {
   const fetchMovies = async (query: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`https://www.omdbapi.com/?s=${query}&apikey=${API_KEY}`);
-      const data = await response.json();
-      if (data.Search) {
-        const detailedMovies = await Promise.all(
-          data.Search.map(async (movie: any) => {
-            const detailsRes = await fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`);
-            const details = await detailsRes.json();
-            return { ...movie, Genre: details.Genre, Plot: details.Plot, imdbRating: details.imdbRating };
-          })
-        );
-
-        setMovies(detailedMovies);
-        if (query === "Batman") {
-          setDefaultMovies(detailedMovies);
-        }
-      } else {
-        setMovies([]);
-      }
+      const res = await fetch(
+        `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
+      );
+      const data = await res.json();
+      setMovies(data.results && data.results.length > 0 ? data.results.map(mapTmdbMovie) : []);
     } catch (error) {
       console.error("Error fetching movies:", error);
     }
@@ -98,8 +109,8 @@ const Home = () => {
     setPage(1);
   };
 
-  const handleMovieClick = (imdbID: string) => {
-    navigate(`/review/${imdbID}`);
+  const handleMovieClick = (id: string) => {
+    navigate(`/review/${id}`);
   };
 
   const filteredMovies = movies.filter((movie) => {
@@ -118,7 +129,6 @@ const Home = () => {
       <HeroSection />
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        {/* Search & Filters Row */}
         <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
           <div className="relative w-full max-w-md">
             <FaSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ivory/30" />
@@ -132,7 +142,6 @@ const Home = () => {
           <Dropdown value={selectedGenre} options={GENRES} onChange={handleGenreChange} />
         </div>
 
-        {/* Movie Grid */}
         <div className="flex min-h-[300px] flex-wrap justify-center gap-6">
           {loading ? (
             Array.from({ length: 8 }).map((_, i) => (
@@ -146,7 +155,7 @@ const Home = () => {
                 style={{ animationDelay: `${(i % MOVIES_PER_PAGE) * 60}ms` }}
               >
                 <MovieCard
-                  imdbID={movie.imdbID}
+                  id={movie.imdbID}
                   title={movie.Title}
                   imageUrl={movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/250x340/171420/f2ede4?text=No+Poster"}
                   plot={movie.Plot}
@@ -164,11 +173,7 @@ const Home = () => {
 
         {filteredMovies.length > MOVIES_PER_PAGE && (
           <div className="mt-10">
-            <Pagination
-              page={page}
-              count={Math.ceil(filteredMovies.length / MOVIES_PER_PAGE)}
-              onChange={setPage}
-            />
+            <Pagination page={page} count={Math.ceil(filteredMovies.length / MOVIES_PER_PAGE)} onChange={setPage} />
           </div>
         )}
       </div>
