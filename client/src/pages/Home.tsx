@@ -55,27 +55,34 @@ const Home = () => {
   }, []);
 
   const fetchDefaultMovies = async () => {
-    const cached = sessionStorage.getItem(DEFAULT_MOVIES_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      setMovies(parsed);
-      setDefaultMovies(parsed);
-      return;
-    }
-
     setLoading(true);
     try {
+      const cached = sessionStorage.getItem(DEFAULT_MOVIES_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setMovies(parsed);
+        setDefaultMovies(parsed);
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
       const data = await res.json();
       const mapped = (data.results || []).map(mapTmdbMovie);
 
       setMovies(mapped);
       setDefaultMovies(mapped);
-      sessionStorage.setItem(DEFAULT_MOVIES_CACHE_KEY, JSON.stringify(mapped));
+
+      try {
+        sessionStorage.setItem(DEFAULT_MOVIES_CACHE_KEY, JSON.stringify(mapped));
+      } catch {
+        // intentionally empty
+      }
     } catch (err) {
       console.error("Error fetching now playing movies", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchMovies = async (query: string) => {
@@ -88,8 +95,9 @@ const Home = () => {
       setMovies(data.results && data.results.length > 0 ? data.results.map(mapTmdbMovie) : []);
     } catch (error) {
       console.error("Error fetching movies:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
