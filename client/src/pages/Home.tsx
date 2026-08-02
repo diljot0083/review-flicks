@@ -17,6 +17,11 @@ const TMDB_GENRE_NAMES: Record<number, string> = {
   878: "Sci-Fi", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
 };
 
+const GENRE_NAME_TO_ID: Record<string, number> = {
+  Action: 28, Drama: 18, Comedy: 35, Thriller: 53,
+  Horror: 27, "Sci-Fi": 878, Romance: 10749,
+};
+
 interface TmdbListMovie {
   id: number;
   title: string;
@@ -53,6 +58,16 @@ const Home = () => {
   useEffect(() => {
     fetchDefaultMovies();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() !== "") return;
+    setPage(1);
+    if (selectedGenre === "All") {
+      setMovies(defaultMovies);
+    } else {
+      fetchByGenre(selectedGenre);
+    }
+  }, [selectedGenre]);
 
   const fetchDefaultMovies = async () => {
     setLoading(true);
@@ -100,13 +115,35 @@ const Home = () => {
     }
   };
 
+  const fetchByGenre = async (genre: string) => {
+    const genreId = GENRE_NAME_TO_ID[genre];
+    if (!genreId) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`
+      );
+      const data = await res.json();
+      setMovies((data.results || []).map(mapTmdbMovie));
+    } catch (err) {
+      console.error("Error fetching movies by genre", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
     setSearchQuery(query);
     setPage(1);
 
     if (query.trim() === "") {
-      setMovies(defaultMovies);
+      if (selectedGenre === "All") {
+        setMovies(defaultMovies);
+      } else {
+        fetchByGenre(selectedGenre);
+      }
     } else {
       fetchMovies(query);
     }
@@ -114,20 +151,13 @@ const Home = () => {
 
   const handleGenreChange = (genre: string) => {
     setSelectedGenre(genre);
-    setPage(1);
   };
 
   const handleMovieClick = (id: string) => {
     navigate(`/review/${id}`);
   };
 
-  const filteredMovies = movies.filter((movie) => {
-    if (selectedGenre === "All") return true;
-    if (!movie.Genre) return false;
-
-    const genresArray = movie.Genre.split(",").map((g: string) => g.trim().toLowerCase());
-    return genresArray.includes(selectedGenre.toLowerCase());
-  });
+  const filteredMovies = movies;
 
   const startIndex = (page - 1) * MOVIES_PER_PAGE;
   const displayedMovies = filteredMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);

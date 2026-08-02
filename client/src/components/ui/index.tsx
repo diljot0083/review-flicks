@@ -144,13 +144,13 @@ export function Dropdown({ value, options, onChange, label }: DropdownProps) {
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="flex w-full min-w-[160px] items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-ivory transition-colors hover:border-white/20"
+                className="flex w-full min-w-[160px] items-center justify-between gap-3 rounded-xl border border-white/15 bg-ink/80 px-4 py-3 text-sm text-ivory transition-colors hover:border-white/25"
             >
                 {value}
                 <FaChevronDown className={`text-xs text-ivory/40 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-                <div className="glass absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-xl p-1.5 shadow-2xl shadow-black/40">
+                <div className="glass absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-xl border border-white/10 bg-ink/95 p-1.5 shadow-2xl shadow-black/40 backdrop-blur-xl">
                     {options.map((opt) => (
                         <button
                             key={opt}
