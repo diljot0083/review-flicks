@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaRedo } from "react-icons/fa";
 import HeroSection from "../components/HeroSection";
 import MovieCard from "../components/MovieCard";
-import { Dropdown, Pagination } from "../components/ui";
+import { Dropdown, Pagination, Button } from "../components/ui";
+import { fetchWithTimeout } from "../lib/fetchWithTimeout";
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -51,6 +52,7 @@ const Home = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const navigate = useNavigate();
   const MOVIES_PER_PAGE = 8;
@@ -76,6 +78,7 @@ const Home = () => {
 
   const fetchDefaultMovies = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       let cachedMovies: any[] | null = null;
       try {
@@ -97,11 +100,12 @@ const Home = () => {
         return;
       }
 
-      const res = await fetch(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
+      const res = await fetchWithTimeout(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
       const data = await res.json();
 
       if (!res.ok) {
         console.error("TMDB now_playing error:", data);
+        setLoadError(true);
         setMovies([]);
         setDefaultMovies([]);
         setLoading(false);
@@ -120,6 +124,8 @@ const Home = () => {
       }
     } catch (err) {
       console.error("Error fetching now playing movies", err);
+      setLoadError(true);
+      setMovies([]);
     } finally {
       setLoading(false);
     }
@@ -127,14 +133,18 @@ const Home = () => {
 
   const fetchMovies = async (query: string) => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
       );
       const data = await res.json();
+      if (!res.ok) throw new Error("TMDB search error");
       setMovies(data.results && data.results.length > 0 ? data.results.map(mapTmdbMovie) : []);
     } catch (error) {
       console.error("Error fetching movies:", error);
+      setLoadError(true);
+      setMovies([]);
     } finally {
       setLoading(false);
     }
@@ -145,16 +155,31 @@ const Home = () => {
     if (!genreId) return;
 
     setLoading(true);
+    setLoadError(false);
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`
       );
       const data = await res.json();
+      if (!res.ok) throw new Error("TMDB discover error");
       setMovies((data.results || []).map(mapTmdbMovie));
     } catch (err) {
       console.error("Error fetching movies by genre", err);
+      setLoadError(true);
+      setMovies([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const retryCurrentView = () => {
+    if (searchQuery.trim() !== "") {
+      fetchMovies(searchQuery);
+    } else if (selectedGenre !== "All") {
+      fetchByGenre(selectedGenre);
+    } else {
+      sessionStorage.removeItem(DEFAULT_MOVIES_CACHE_KEY);
+      fetchDefaultMovies();
     }
   };
 
@@ -210,6 +235,15 @@ const Home = () => {
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="skeleton h-[404px] w-[250px] shrink-0 rounded-2xl" />
             ))
+          ) : loadError ? (
+            <div className="mt-10 flex flex-col items-center gap-4 text-center">
+              <p className="text-ivory/50">
+                Couldn't reach the movie database - this is usually a network hiccup, not a bug.
+              </p>
+              <Button variant="secondary" size="sm" onClick={retryCurrentView}>
+                <FaRedo className="text-xs" /> Try again
+              </Button>
+            </div>
           ) : displayedMovies.length > 0 ? (
             displayedMovies.map((movie, i) => (
               <div

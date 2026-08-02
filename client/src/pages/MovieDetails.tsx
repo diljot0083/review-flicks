@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaStar } from "react-icons/fa";
 import { Button, Spinner } from "../components/ui";
+import { fetchWithTimeout } from "../lib/fetchWithTimeout";
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
@@ -15,7 +16,7 @@ const MovieDetails = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
+        const response = await fetchWithTimeout(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
         const data = await response.json();
         setMovie(data && data.id ? data : null);
       } catch (error) {
