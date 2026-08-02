@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch } from "react-icons/fa";
 import HeroSection from "../components/HeroSection";
@@ -55,11 +55,16 @@ const Home = () => {
   const navigate = useNavigate();
   const MOVIES_PER_PAGE = 8;
 
+  const previousGenre = useRef(selectedGenre);
+
   useEffect(() => {
     fetchDefaultMovies();
   }, []);
 
   useEffect(() => {
+    if (previousGenre.current === selectedGenre) return;
+    previousGenre.current = selectedGenre;
+
     if (searchQuery.trim() !== "") return;
     setPage(1);
     if (selectedGenre === "All") {
@@ -72,17 +77,37 @@ const Home = () => {
   const fetchDefaultMovies = async () => {
     setLoading(true);
     try {
-      const cached = sessionStorage.getItem(DEFAULT_MOVIES_CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        setMovies(parsed);
-        setDefaultMovies(parsed);
+      let cachedMovies: any[] | null = null;
+      try {
+        const cached = sessionStorage.getItem(DEFAULT_MOVIES_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedMovies = parsed;
+          }
+        }
+      } catch {
+        cachedMovies = null;
+      }
+
+      if (cachedMovies) {
+        setMovies(cachedMovies);
+        setDefaultMovies(cachedMovies);
         setLoading(false);
         return;
       }
 
       const res = await fetch(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
       const data = await res.json();
+
+      if (!res.ok) {
+        console.error("TMDB now_playing error:", data);
+        setMovies([]);
+        setDefaultMovies([]);
+        setLoading(false);
+        return;
+      }
+
       const mapped = (data.results || []).map(mapTmdbMovie);
 
       setMovies(mapped);

@@ -20,7 +20,7 @@ function BulbRow({ reverse = false }: { reverse?: boolean }) {
       {Array.from({ length: BULB_COUNT }).map((_, i) => (
         <span
           key={i}
-          className="h-[5px] w-[5px] shrink-0 rounded-full bg-gold animate-bulb"
+          className="h-[5px] w-[5px] shrink-0 rounded-full bg-gold bulb-glow animate-bulb will-change-[opacity,transform]"
           style={{ animationDelay: `${(reverse ? BULB_COUNT - i : i) * 0.08}s` }}
         />
       ))}
@@ -31,10 +31,9 @@ function BulbRow({ reverse = false }: { reverse?: boolean }) {
 const HeroSection = () => {
   return (
     <section className="grain relative overflow-hidden bg-ink px-4 pb-10 pt-8 text-center">
-      {/* Spotlight beams stand in for the old hero photo — angled like stage lights, not a decorative blob */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="animate-sway absolute -top-24 -left-16 h-[520px] w-[420px]"
+          className="animate-sway absolute -top-24 -left-16 h-[520px] w-[420px] will-change-transform"
           style={{
             background:
               "conic-gradient(from 200deg at 50% 0%, transparent, rgba(212,162,78,0.30), transparent 45%)",
@@ -42,7 +41,7 @@ const HeroSection = () => {
           }}
         />
         <div
-          className="animate-sway-reverse absolute -top-24 -right-16 h-[520px] w-[420px]"
+          className="animate-sway-reverse absolute -top-24 -right-16 h-[520px] w-[420px] will-change-transform"
           style={{
             background:
               "conic-gradient(from 160deg at 50% 0%, transparent, rgba(179,73,95,0.28), transparent 45%)",
@@ -70,7 +69,7 @@ const HeroSection = () => {
 
       <div className="perforation relative z-10 mt-8" />
       <div className="relative z-10 overflow-hidden py-4">
-        <div className="animate-marquee flex w-max items-center gap-10 whitespace-nowrap text-xs font-medium uppercase tracking-[0.3em] text-ivory/30">
+        <div className="animate-marquee flex w-max items-center gap-10 whitespace-nowrap text-xs font-medium uppercase tracking-[0.3em] text-ivory/30 will-change-transform">
           {[...GENRE_TICKER, ...GENRE_TICKER].map((genre, i) => (
             <span key={i} className="flex items-center gap-10">
               {genre} <span className="text-gold/50">✦</span>
