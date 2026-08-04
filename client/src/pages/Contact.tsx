@@ -63,14 +63,14 @@ const Contact = () => {
           We'd Love to <span className="text-gradient-gold">Hear From You</span>
         </h1>
         <p className="mt-4 text-sm text-ivory/50 sm:text-base">
-          Feedback, bug reports, or a title we should add — tell us what's on your mind.
+          Feedback, bug reports, or a title we should add - tell us what's on your mind.
         </p>
       </div>
 
       <div className="glass relative z-10 mx-auto mt-10 max-w-xl rounded-3xl p-8 sm:p-10">
         {status === "success" && (
           <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-            <FaCheckCircle /> Thanks — your suggestion has been sent.
+            <FaCheckCircle /> Thanks - your suggestion has been sent.
           </div>
         )}
         {status === "error" && (

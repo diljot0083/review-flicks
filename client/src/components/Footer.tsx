@@ -8,7 +8,7 @@ const Footer = () => {
           <FaFilm className="text-gold" />
           <span className="font-display text-sm">Movie Review</span>
         </div>
-        <p className="text-xs text-ivory/35">© {new Date().getFullYear()} ReviewFlicks — every film deserves an honest take.</p>
+        <p className="text-xs text-ivory/35">© {new Date().getFullYear()} ReviewFlicks - every film deserves an honest take.</p>
       </div>
     </footer>
   );

@@ -39,7 +39,7 @@ const About = () => {
           <div className="space-y-5 leading-relaxed text-ivory/65">
             <p>
               An aspiring Software Developer with a strong foundation in C++, the MERN stack, and data
-              structures. I'm passionate about building efficient, scalable, and user-centric software —
+              structures. I'm passionate about building efficient, scalable, and user-centric software -
               and I enjoy creating full-stack applications that are both functional and intuitive.
             </p>
             <p>
@@ -53,7 +53,7 @@ const About = () => {
               experiment, and keep up with new tools and techniques.
             </p>
             <p>
-              This movie review site is a result of that learning journey — combining my skills,
+              This movie review site is a result of that learning journey - combining my skills,
               creativity, and love for building meaningful digital experiences. Welcome, and I hope you
               enjoy exploring it as much as I enjoyed building it.
             </p>
