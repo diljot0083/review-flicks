@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaRedo } from "react-icons/fa";
 import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
-import { Spinner } from "../ui";
-import { fetchWithTimeout } from "../../lib/fetchWithTimeout";
+import { Spinner, Button } from "../ui";
+import { fetchWithRetry } from "../../lib/fetchWithTimeout";
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
@@ -24,24 +24,30 @@ const Review = () => {
   const navigate = useNavigate();
   const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [connectionFailed, setConnectionFailed] = useState(false);
   const [refreshReviews, setRefreshReviews] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    const fetchMovieDetails = async () => {
-      try {
-        const res = await fetchWithTimeout(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=external_ids`
-        );
-        const data = await res.json();
-        setMovie(data && data.id ? data : null);
-      } catch (err) {
-        console.error("Error fetching movie:", err);
-      }
-      setLoading(false);
-    };
-    fetchMovieDetails();
+    if (id) fetchMovieDetails();
   }, [id]);
+
+  const fetchMovieDetails = async () => {
+    if (!id) return;
+    setLoading(true);
+    setConnectionFailed(false);
+    try {
+      const res = await fetchWithRetry(
+        `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=external_ids`
+      );
+      const data = await res.json();
+      setMovie(res.ok && data.id ? data : null);
+    } catch (err) {
+      console.error("Error fetching movie:", err);
+      setConnectionFailed(true);
+      setMovie(null);
+    }
+    setLoading(false);
+  };
 
   if (!id) return <p className="p-8 text-center text-ivory/60">No movie ID provided.</p>;
 
@@ -49,6 +55,19 @@ const Review = () => {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-ink">
         <Spinner className="h-10 w-10" />
+      </div>
+    );
+  }
+
+  if (connectionFailed) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-4 bg-ink text-center">
+        <p className="max-w-sm text-sm text-ivory/50">
+          Couldn't reach the movie database. Check your connection (or any VPN/DNS filter) and try again.
+        </p>
+        <Button variant="secondary" size="sm" onClick={fetchMovieDetails}>
+          <FaRedo className="text-xs" /> Try again
+        </Button>
       </div>
     );
   }
@@ -98,7 +117,7 @@ const Review = () => {
           </>
         ) : (
           <p className="rounded-2xl border border-dashed border-white/10 py-10 text-center text-sm text-ivory/35">
-            Reviews aren't available for this title yet — TMDB hasn't linked it to an IMDb entry.
+            Reviews aren't available for this title yet - TMDB hasn't linked it to an IMDb entry.
           </p>
         )}
       </div>

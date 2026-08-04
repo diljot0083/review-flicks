@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaStar } from "react-icons/fa";
+import { FaArrowLeft, FaStar, FaRedo } from "react-icons/fa";
 import { Button, Spinner } from "../components/ui";
-import { fetchWithTimeout } from "../lib/fetchWithTimeout";
+import { fetchWithRetry } from "../lib/fetchWithTimeout";
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
@@ -12,26 +12,44 @@ const MovieDetails = () => {
   const navigate = useNavigate();
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [connectionFailed, setConnectionFailed] = useState(false);
 
   useEffect(() => {
-    const fetchMovieDetails = async () => {
-      try {
-        const response = await fetchWithTimeout(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
-        const data = await response.json();
-        setMovie(data && data.id ? data : null);
-      } catch (error) {
-        console.error("Error fetching movie details:", error);
-      }
-      setLoading(false);
-    };
-
     fetchMovieDetails();
   }, [id]);
+
+  const fetchMovieDetails = async () => {
+    setLoading(true);
+    setConnectionFailed(false);
+    try {
+      const response = await fetchWithRetry(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`);
+      const data = await response.json();
+      setMovie(response.ok && data.id ? data : null);
+    } catch (error) {
+      console.error("Error fetching movie details:", error);
+      setConnectionFailed(true);
+      setMovie(null);
+    }
+    setLoading(false);
+  };
 
   if (loading) {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-ink">
         <Spinner className="h-10 w-10" />
+      </div>
+    );
+  }
+
+  if (connectionFailed) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-4 bg-ink text-center">
+        <p className="max-w-sm text-sm text-ivory/50">
+          Couldn't reach the movie database. Check your connection (or any VPN/DNS filter) and try again.
+        </p>
+        <Button variant="secondary" size="sm" onClick={fetchMovieDetails}>
+          <FaRedo className="text-xs" /> Try again
+        </Button>
       </div>
     );
   }

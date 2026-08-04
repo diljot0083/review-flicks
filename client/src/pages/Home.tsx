@@ -4,7 +4,7 @@ import { FaSearch, FaRedo } from "react-icons/fa";
 import HeroSection from "../components/HeroSection";
 import MovieCard from "../components/MovieCard";
 import { Dropdown, Pagination, Button } from "../components/ui";
-import { fetchWithTimeout } from "../lib/fetchWithTimeout";
+import { fetchWithRetry } from "../lib/fetchWithTimeout";
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -43,6 +43,24 @@ function mapTmdbMovie(m: TmdbListMovie) {
   };
 }
 
+async function describeFetchFailure(res: Response | null, thrown: unknown): Promise<string> {
+  if (!res) {
+    const timedOut = thrown instanceof Error && thrown.name === "AbortError";
+    return timedOut
+      ? "Timed out trying to reach the movie database, even after retrying. Something between this device and the internet is likely blocking or dropping the connection - a VPN, private DNS, or content blocker are common causes"
+      : "Can't reach the movie database - the connection failed immediately. Check your internet connection.";
+  }
+  try {
+    const body = await res.json();
+    if (body?.status_message) {
+      return `The movie database rejected the request: "${body.status_message}" (HTTP ${res.status}).`;
+    }
+  } catch {
+    // intentionally empty
+  }
+  return `The movie database returned an error (HTTP ${res.status}).`;
+}
+
 const DEFAULT_MOVIES_CACHE_KEY = "reviewflicks_now_playing";
 
 const Home = () => {
@@ -52,7 +70,7 @@ const Home = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const MOVIES_PER_PAGE = 8;
@@ -78,7 +96,7 @@ const Home = () => {
 
   const fetchDefaultMovies = async () => {
     setLoading(true);
-    setLoadError(false);
+    setErrorMessage(null);
     try {
       let cachedMovies: any[] | null = null;
       try {
@@ -100,18 +118,26 @@ const Home = () => {
         return;
       }
 
-      const res = await fetchWithTimeout(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("TMDB now_playing error:", data);
-        setLoadError(true);
+      let res: Response;
+      try {
+        res = await fetchWithRetry(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_API_KEY}&page=1`);
+      } catch (connectionErr) {
+        setErrorMessage(await describeFetchFailure(null, connectionErr));
         setMovies([]);
         setDefaultMovies([]);
         setLoading(false);
         return;
       }
 
+      if (!res.ok) {
+        setErrorMessage(await describeFetchFailure(res, null));
+        setMovies([]);
+        setDefaultMovies([]);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
       const mapped = (data.results || []).map(mapTmdbMovie);
 
       setMovies(mapped);
@@ -123,8 +149,8 @@ const Home = () => {
         // intentionally empty
       }
     } catch (err) {
-      console.error("Error fetching now playing movies", err);
-      setLoadError(true);
+      console.error("Unexpected error loading movies:", err);
+      setErrorMessage("Something unexpected went wrong loading movies.");
       setMovies([]);
     } finally {
       setLoading(false);
@@ -133,17 +159,26 @@ const Home = () => {
 
   const fetchMovies = async (query: string) => {
     setLoading(true);
-    setLoadError(false);
+    setErrorMessage(null);
     try {
-      const res = await fetchWithTimeout(
-        `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
-      );
+      let res: Response;
+      try {
+        res = await fetchWithRetry(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`);
+      } catch (connectionErr) {
+        setErrorMessage(await describeFetchFailure(null, connectionErr));
+        setMovies([]);
+        return;
+      }
+      if (!res.ok) {
+        setErrorMessage(await describeFetchFailure(res, null));
+        setMovies([]);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error("TMDB search error");
       setMovies(data.results && data.results.length > 0 ? data.results.map(mapTmdbMovie) : []);
     } catch (error) {
-      console.error("Error fetching movies:", error);
-      setLoadError(true);
+      console.error("Unexpected error searching movies:", error);
+      setErrorMessage("Something unexpected went wrong searching movies.");
       setMovies([]);
     } finally {
       setLoading(false);
@@ -155,17 +190,28 @@ const Home = () => {
     if (!genreId) return;
 
     setLoading(true);
-    setLoadError(false);
+    setErrorMessage(null);
     try {
-      const res = await fetchWithTimeout(
-        `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`
-      );
+      let res: Response;
+      try {
+        res = await fetchWithRetry(
+          `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`
+        );
+      } catch (connectionErr) {
+        setErrorMessage(await describeFetchFailure(null, connectionErr));
+        setMovies([]);
+        return;
+      }
+      if (!res.ok) {
+        setErrorMessage(await describeFetchFailure(res, null));
+        setMovies([]);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error("TMDB discover error");
       setMovies((data.results || []).map(mapTmdbMovie));
     } catch (err) {
-      console.error("Error fetching movies by genre", err);
-      setLoadError(true);
+      console.error("Unexpected error loading genre:", err);
+      setErrorMessage("Something unexpected went wrong loading this genre.");
       setMovies([]);
     } finally {
       setLoading(false);
@@ -235,11 +281,9 @@ const Home = () => {
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="skeleton h-[404px] w-[250px] shrink-0 rounded-2xl" />
             ))
-          ) : loadError ? (
-            <div className="mt-10 flex flex-col items-center gap-4 text-center">
-              <p className="text-ivory/50">
-                Couldn't reach the movie database - this is usually a network hiccup, not a bug.
-              </p>
+          ) : errorMessage ? (
+            <div className="mt-10 flex max-w-md flex-col items-center gap-4 text-center">
+              <p className="text-sm text-ivory/50">{errorMessage}</p>
               <Button variant="secondary" size="sm" onClick={retryCurrentView}>
                 <FaRedo className="text-xs" /> Try again
               </Button>
